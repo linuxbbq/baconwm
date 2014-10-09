@@ -1,5 +1,4 @@
 #include <xcb/xcb.h>
-/*int init_baconwm();*/
 
 int init_baconwm () {
 
@@ -69,9 +68,9 @@ int init_baconwm () {
                 values[1] = (pointer->root_y + geom->height > screen->height_in_pixels)?
                     (screen->height_in_pixels - geom->height):pointer->root_y;
                 xcb_configure_window(disp, win, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
-                xcb_flush(dpy);
+                xcb_flush(disp);
             } else if (values[2] == 3) { /* resize */
-                geom = xcb_get_geometry_reply(disp, xcb_get_geometry(dpy, win), NULL);
+                geom = xcb_get_geometry_reply(disp, xcb_get_geometry(disp, win), NULL);
                 values[0] = pointer->root_x - geom->x;
                 values[1] = pointer->root_y - geom->y;
                 xcb_configure_window(disp, win, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
