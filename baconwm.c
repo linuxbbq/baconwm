@@ -18,6 +18,7 @@ int init_baconwm () {
     screen = xcb_setup_roots_iterator(xcb_get_setup(disp)).data;
     root = screen->root;
 
+    /* tinywm's key and button grabbing routines */
     xcb_grab_key(disp, 1, root, XCB_MOD_MASK_2, XCB_NO_SYMBOL,
                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
 
@@ -30,6 +31,7 @@ int init_baconwm () {
                 XCB_GRAB_MODE_ASYNC, root, XCB_NONE, 3, XCB_MOD_MASK_1);
     xcb_flush(disp);
 
+    /* big fucking loop */
     for (;;)
     {
         ev = xcb_wait_for_event(disp);
@@ -59,6 +61,9 @@ int init_baconwm () {
 
         case XCB_MOTION_NOTIFY:
         {
+	    /* None of this matters, it's the tinywm stackable shizzle. */
+	    /* I just have it here because it's cool.  We will snap all */
+	    /* spawned windows to 0,0,w,h geometry for full-screen */
             xcb_query_pointer_reply_t *pointer;
             pointer = xcb_query_pointer_reply(disp, xcb_query_pointer(disp, root), 0);
             if (values[2] == 1) {/* move */
