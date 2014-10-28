@@ -1,11 +1,16 @@
 #include <xcb/xcb.h>
 
+/* xcb globals */
+static void grab_keys(void); /* key grabbing function */
+
+/* general globals */
+static xcb_connection_t *disp;
+static xcb_screen_t *screen;
+
 int init_baconwm () {
 
     uint32_t values[3];
 
-    xcb_connection_t *disp;
-    xcb_screen_t *screen;
     xcb_drawable_t win;
     xcb_drawable_t root;
 
@@ -17,6 +22,8 @@ int init_baconwm () {
 
     screen = xcb_setup_roots_iterator(xcb_get_setup(disp)).data;
     root = screen->root;
+
+    grab_keys();
 
     /* tinywm's key and button grabbing routines */
     xcb_grab_key(disp, 1, root, XCB_MOD_MASK_2, XCB_NO_SYMBOL,
@@ -91,6 +98,11 @@ int init_baconwm () {
         }
     }
     return 0;
+}
+
+void grab_keys(void) {
+    /* TODO: determine efficient way to capture keycode/keysyms */
+    /* then, remove previous 'place-holder code' in main loop */
 }
 
 
