@@ -1,4 +1,6 @@
 #include <xcb/xcb.h>
+#include <X11/keysym.h>
+#include <xcb/xcb_keysyms.h>
 
 /* xcb globals */
 static void grab_keys(void); /* key grabbing function */
