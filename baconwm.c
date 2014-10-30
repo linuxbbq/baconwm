@@ -1,13 +1,36 @@
+#include <stdlib.h>
 #include <xcb/xcb.h>
 #include <X11/keysym.h>
 #include <xcb/xcb_keysyms.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <X11/X.h>
+
+/* Macros */
+#define LENGTH(x) (unsigned int)(sizeof(x) / sizeof(*x))
+
+/* union for keys */
+typedef union { const char * const * const cmd;
+    int i; /* may need later, we'll see. */
+} Arg;
+
+typedef struct { int mod; xcb_keysym_t sym;
+    void (*func) (const Arg *);
+    const Arg arg;
+} Key;
 
 /* xcb globals */
 static void grab_keys(void); /* key grabbing function */
+static xcb_keycode_t *keysym_to_keycode(xcb_keysym_t sym);
+static void grab_keycode(xcb_keycode_t *keycode, const int mod);
 
 /* general globals */
 static xcb_connection_t *disp;
 static xcb_screen_t *screen;
+static void spawn(const Arg *arg);
+
+#include "config.h"
 
 int init_baconwm () {
 
@@ -27,17 +50,6 @@ int init_baconwm () {
 
     grab_keys();
 
-    /* tinywm's key and button grabbing routines */
-    xcb_grab_key(disp, 1, root, XCB_MOD_MASK_2, XCB_NO_SYMBOL,
-                 XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
-
-    xcb_grab_button(disp, 0, root, XCB_EVENT_MASK_BUTTON_PRESS |
-                XCB_EVENT_MASK_BUTTON_RELEASE, XCB_GRAB_MODE_ASYNC,
-                XCB_GRAB_MODE_ASYNC, root, XCB_NONE, 1, XCB_MOD_MASK_1);
-
-    xcb_grab_button(disp, 0, root, XCB_EVENT_MASK_BUTTON_PRESS |
-                XCB_EVENT_MASK_BUTTON_RELEASE, XCB_GRAB_MODE_ASYNC,
-                XCB_GRAB_MODE_ASYNC, root, XCB_NONE, 3, XCB_MOD_MASK_1);
     xcb_flush(disp);
 
     /* big fucking loop */
@@ -102,11 +114,45 @@ int init_baconwm () {
     return 0;
 }
 
+void spawn(const Arg *arg){
+    /* spawns a process via command */
+    if (fork()) return;
+    setsid();
+    execvp((char *)arg->cmd[0], (char **)arg->cmd);
+}
+
 void grab_keys(void) {
     /* TODO: determine efficient way to capture keycode/keysyms */
     /* then, remove previous 'place-holder code' in main loop */
+    int i;
+    xcb_keycode_t *keycode;
+    xcb_ungrab_key(disp, XCB_GRAB_ANY, screen->root, XCB_MOD_MASK_ANY);
+    for (i=0;i<LENGTH(keys);i++) {
+	keysym_to_keycode(keys[i].mod);
+	grab_keycode(keycode, keys[i].mod);
+    }
 }
 
+void grab_keycode(xcb_keycode_t *keycode, const int mod) {
+    unsigned int x, k;
+    uint16_t mods[] = {0, XCB_MOD_MASK_LOCK };
+    for (x=0; keycode[x] != XCB_NO_SYMBOL; x++)
+	for (k=0; k< LENGTH(mods); k++)
+	    xcb_grab_key(disp, 1, screen->root, mod | mods[k], keycode[x],
+			 XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+    free(keycode);
+}
+
+xcb_keycode_t *keysym_to_keycode(xcb_keysym_t sym) {
+    xcb_keycode_t *code;
+    xcb_key_symbols_t *syms = xcb_key_symbols_alloc(disp);
+
+    if(!syms)
+	return NULL;
+    code = xcb_key_symbols_get_keycode(syms, sym);
+    xcb_key_symbols_free(syms);
+    return code;
+    }
 
 int main () {
     init_baconwm ();
